@@ -54,15 +54,17 @@ jobs:
       - name: Install uv
         run: pip install uv
 
-      - name: Install dependencies
+      - name: Install dependencies and export requirements
         run: |
           uv venv
           source .venv/bin/activate
           uv pip install -e ".[dev]"
-          uv pip install pip-audit
+          # Export only third-party dependencies (exclude tikpull itself)
+          uv pip freeze | grep -v "^tikpull" > /tmp/requirements-audit.txt
+          cat /tmp/requirements-audit.txt
 
       - name: Run pip-audit
         run: |
           source .venv/bin/activate
-          # Skip tikpull itself as it is a local package not published on PyPI
-          pip-audit --strict --skip-editable
+          pip install pip-audit
+          pip-audit --strict -r /tmp/requirements-audit.txt
