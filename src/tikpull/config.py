@@ -29,8 +29,14 @@ def get_output_dir(config: dict, cli_override: str | None = None) -> Path:
     """
     if cli_override is not None:
         return Path(cli_override).expanduser().resolve()
-
     if "output_dir" in config:
         return Path(config["output_dir"]).expanduser().resolve()
-
     return Path(".").resolve()
+
+
+def get_url_file(config: dict) -> Path | None:
+    """Return the default URL file path from config, or None if not set."""
+    if "url_file" in config:
+        path = Path(config["url_file"]).expanduser().resolve()
+        return path if path.is_file() else None
+    return None
