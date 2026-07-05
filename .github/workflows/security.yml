@@ -64,4 +64,5 @@ jobs:
       - name: Run pip-audit
         run: |
           source .venv/bin/activate
-          pip-audit --strict
+          # Skip tikpull itself as it is a local package not published on PyPI
+          pip-audit --strict --skip-editable
