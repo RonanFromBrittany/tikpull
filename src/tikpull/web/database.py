@@ -1,8 +1,8 @@
 """SQLite database for tikpull download history."""
 
-import aiosqlite
-from datetime import datetime
 from pathlib import Path
+
+import aiosqlite
 
 DB_DIR = Path.home() / ".local" / "share" / "tikpull"
 DB_PATH = DB_DIR / "history.db"

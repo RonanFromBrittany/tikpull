@@ -8,7 +8,7 @@ from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.table import Table
 
-from .config import load_config, get_output_dir
+from .config import get_output_dir, load_config
 from .downloader import download_video
 from .models import DownloadRequest, DownloadResult
 
@@ -22,11 +22,16 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument("urls", nargs="*", help="One or more TikTok video URLs")
     parser.add_argument(
-        "-o", "--output", default=None, metavar="DIR",
+        "-o",
+        "--output",
+        default=None,
+        metavar="DIR",
         help="Output directory (overrides config file)",
     )
     parser.add_argument(
-        "-f", "--file", metavar="FILE",
+        "-f",
+        "--file",
+        metavar="FILE",
         help="Text file containing one URL per line (batch mode)",
     )
     parser.add_argument("--version", action="version", version="tikpull 0.1.0")
@@ -41,9 +46,7 @@ def _read_url_file(path: Path) -> tuple[list[str], list[str]]:
     """
     lines = path.read_text().splitlines()
     active_urls = [
-        line.strip()
-        for line in lines
-        if line.strip() and not line.strip().startswith("#")
+        line.strip() for line in lines if line.strip() and not line.strip().startswith("#")
     ]
     return active_urls, lines
 

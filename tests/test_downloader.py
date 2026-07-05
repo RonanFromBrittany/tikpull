@@ -1,9 +1,7 @@
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-import pytest
-
-from tikpull import DownloadRequest, DownloadResult, download_video
+from tikpull import DownloadRequest, download_video
 
 
 def test_download_success(tmp_path):

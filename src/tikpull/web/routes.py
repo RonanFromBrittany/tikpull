@@ -5,14 +5,15 @@ import json
 from collections.abc import AsyncGenerator
 from pathlib import Path
 
-from fastapi import APIRouter, HTTPException, UploadFile, File
+from fastapi import APIRouter, File, HTTPException, UploadFile
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
-from tikpull.config import load_config, get_output_dir, get_url_file
+from tikpull.config import get_output_dir, get_url_file, load_config
 from tikpull.downloader import download_video
-from tikpull.models import DownloadRequest, DownloadResult
-from .database import record_download, get_history, clear_history
+from tikpull.models import DownloadRequest
+
+from .database import clear_history, get_history, record_download
 
 router = APIRouter()
 
@@ -169,6 +170,7 @@ async def download_batch_file(file: UploadFile = File(...)):
 
 
 # --- Config routes ---
+
 
 class ConfigPayload(BaseModel):
     output_dir: str = ""
