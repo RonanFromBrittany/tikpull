@@ -40,7 +40,7 @@
 
     main {
       width: 100%;
-      max-width: 680px;
+      max-width: 780px;
       display: flex;
       flex-direction: column;
       gap: 1.5rem;
@@ -152,7 +152,7 @@
     .badge.error    { background: rgba(254,44,85,0.15);   color: var(--error); }
     .badge.pending  { background: rgba(255,255,255,0.05); color: var(--text-muted); }
 
-    .history-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    .history-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
 
     .history-table th {
       text-align: left;
@@ -160,6 +160,7 @@
       font-weight: 500;
       padding: 0.4rem 0.6rem;
       border-bottom: 1px solid var(--border);
+      white-space: nowrap;
     }
 
     .history-table td {
@@ -169,14 +170,37 @@
     }
 
     .history-table td.url-cell {
-      max-width: 260px;
+      max-width: 220px;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
       color: var(--text-muted);
     }
 
+    .history-table td.date-cell {
+      white-space: nowrap;
+      color: var(--text-muted);
+      font-size: 0.78rem;
+    }
+
+    .history-table td.file-cell {
+      max-width: 160px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 0.78rem;
+    }
+
     .empty { color: var(--text-muted); font-size: 0.88rem; text-align: center; padding: 1rem 0; }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+    }
+
+    .card-header h2 { margin-bottom: 0; }
 
     .clear-btn {
       background: transparent;
@@ -184,7 +208,6 @@
       color: var(--text-muted);
       font-size: 0.8rem;
       padding: 0.3rem 0.8rem;
-      margin-bottom: 0.8rem;
     }
 
     .clear-btn:hover { background: var(--border); color: var(--text); }
@@ -222,9 +245,11 @@
 
   <!-- Download history -->
   <div class="card">
-    <h2>History</h2>
-    <button class="clear-btn" onclick="clearHistory()">Clear</button>
-    <div id="history-container"><p class="empty">No downloads yet for this session.</p></div>
+    <div class="card-header">
+      <h2>History</h2>
+      <button class="clear-btn" onclick="clearHistory()">Clear</button>
+    </div>
+    <div id="history-container"><p class="empty">No downloads yet.</p></div>
   </div>
 
 </main>
@@ -253,7 +278,17 @@
     document.getElementById('batch-btn').disabled = false;
   }
 
-  // Build a progress item for a URL that is currently downloading
+  // Format an ISO datetime string for display
+  function formatDate(iso) {
+    if (!iso) return '—';
+    const d = new Date(iso + 'Z');
+    return d.toLocaleString(undefined, {
+      month: 'short', day: '2-digit',
+      hour: '2-digit', minute: '2-digit'
+    });
+  }
+
+  // Build a progress item for a URL currently being downloaded
   function makeItem(url) {
     const div = document.createElement('div');
     div.className = 'progress-item';
@@ -307,7 +342,6 @@
         const evt = JSON.parse(part.slice(5).trim());
 
         if (evt.type === 'already_downloaded') {
-          // Show commented-out URLs as already downloaded immediately
           progressContainer.appendChild(makeAlreadyItem(evt.url));
         } else if (evt.type === 'progress') {
           const el = makeItem(evt.url);
@@ -361,48 +395,58 @@
     btn.disabled = false;
   }
 
-  // Fetch and render the session history table
+  // Fetch and render the history table from the SQLite database
   async function refreshHistory() {
     const resp = await fetch('/api/history');
     const { history } = await resp.json();
     const container = document.getElementById('history-container');
 
     if (!history.length) {
-      container.innerHTML = '<p class="empty">No downloads yet for this session.</p>';
+      container.innerHTML = '<p class="empty">No downloads yet.</p>';
       return;
     }
 
-    const rows = [...history].reverse().map(h => {
-      const icon = h.already_downloaded ? '🔵' : (h.success ? '✅' : '❌');
-      const result = h.already_downloaded
-        ? '<span style="color:var(--already);font-size:0.8rem">Already downloaded</span>'
-        : h.success
-          ? (h.output_path?.split('/').pop() || '—')
-          : `<span style="color:var(--error);font-size:0.8rem">${(h.error || '').slice(0, 50)}</span>`;
+    const rows = history.map(h => {
+      const icon = h.status === 'already_downloaded' ? '🔵'
+                 : h.status === 'success' ? '✅' : '❌';
+      const resultCell = h.status === 'already_downloaded'
+        ? `<span style="color:var(--already);font-size:0.78rem">Already downloaded</span>`
+        : h.status === 'success'
+          ? `<span style="color:var(--success)">${h.output_path?.split('/').pop() || '—'}</span>`
+          : `<span style="color:var(--error)">${(h.error || '').slice(0, 50)}</span>`;
+
       return `
         <tr>
           <td>${icon}</td>
           <td class="url-cell" title="${h.url}">${h.url}</td>
-          <td>${result}</td>
+          <td class="file-cell">${resultCell}</td>
+          <td class="date-cell">${formatDate(h.downloaded_at)}</td>
         </tr>
       `;
     }).join('');
 
     container.innerHTML = `
       <table class="history-table">
-        <thead><tr><th></th><th>URL</th><th>Result</th></tr></thead>
+        <thead>
+          <tr>
+            <th></th>
+            <th>URL</th>
+            <th>Result</th>
+            <th>Date</th>
+          </tr>
+        </thead>
         <tbody>${rows}</tbody>
       </table>
     `;
   }
 
-  // Clear session history
+  // Clear all history from the database
   async function clearHistory() {
     await fetch('/api/history', { method: 'DELETE' });
     refreshHistory();
   }
 
-  // Initialize history on page load
+  // Load history on page load
   refreshHistory();
 </script>
 
