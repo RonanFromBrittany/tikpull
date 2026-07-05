@@ -1,6 +1,8 @@
 # tikpull
 
-Download TikTok videos and photo carousels from the command line or as a Python library.
+[![Security Scan](https://github.com/RonanFromBrittany/tikpull/actions/workflows/security.yml/badge.svg)](https://github.com/RonanFromBrittany/tikpull/actions/workflows/security.yml)
+
+Download TikTok videos and photo carousels from the command line, as a Python library, or via a web interface.
 
 ## Features
 
@@ -8,7 +10,9 @@ Download TikTok videos and photo carousels from the command line or as a Python 
 - Download TikTok photo/carousel posts (JPEG, no watermark)
 - Batch download from a URL list file
 - Automatically comments out successfully downloaded URLs in the list file (for easy resuming)
-- Configurable output directory via config file or CLI flag
+- Configurable output directory and default URL file via config file or CLI flag
+- Web interface with real-time progress, batch upload, and persistent download history
+- Security scanning via CodeQL and pip-audit on every push
 
 ## Installation
 
@@ -47,12 +51,26 @@ Lines starting with `#` are ignored. After each successful download, the
 corresponding line is automatically commented out so you can safely resume
 an interrupted batch.
 
+## Web interface
+
+```bash
+tikpull-web
+```
+
+Opens a local web server at `http://127.0.0.1:8080` with:
+
+- Single URL download with real-time progress
+- Batch download via drag-and-drop URL file upload
+- Persistent download history (SQLite, survives restarts)
+- Settings page to configure output directory and default URL file
+
 ## Configuration
 
 tikpull looks for a config file at `~/.config/tikpull/config.toml`:
 
 ```toml
 output_dir = "~/Downloads/tiktok"
+url_file   = "~/Documents/tiktok_urls.txt"
 ```
 
 Priority order for the output directory:
@@ -83,10 +101,10 @@ results = download_batch(requests)
 
 ## How it works
 
-| URL type | Backend |
-|---|---|
-| `/video/` | yt-dlp (fallback: tikwm API) |
-| `/photo/` | tikwm API (images downloaded as individual JPEGs) |
+| URL type   | Backend                          |
+|------------|----------------------------------|
+| `/video/`  | yt-dlp (fallback: tikwm API)     |
+| `/photo/`  | tikwm API (JPEG images)          |
 
 ## Development
 
@@ -97,3 +115,13 @@ uv venv && source .venv/bin/activate
 uv pip install -e ".[dev]"
 pytest
 ```
+
+## Security
+
+This project runs automated security scans on every push:
+
+- **CodeQL** — static analysis of Python source code
+- **pip-audit** — vulnerability scan of all third-party dependencies
+- **Dependabot** — automatic alerts for newly published CVEs
+
+Results are visible in the [Security tab](https://github.com/RonanFromBrittany/tikpull/security).
