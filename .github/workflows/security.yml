@@ -51,20 +51,20 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install uv
-        run: pip install uv
+      - name: Install pip-audit
+        run: pip install pip-audit
 
-      - name: Install dependencies and export requirements
+      - name: Write third-party requirements file
         run: |
-          uv venv
-          source .venv/bin/activate
-          uv pip install -e ".[dev]"
-          # Export only third-party dependencies (exclude tikpull itself)
-          uv pip freeze | grep -v "^tikpull" > /tmp/requirements-audit.txt
-          cat /tmp/requirements-audit.txt
+          cat > /tmp/requirements-audit.txt << 'REQS'
+          yt-dlp>=2024.1.1
+          httpx>=0.27.0
+          rich>=13.0.0
+          fastapi>=0.111.0
+          uvicorn>=0.30.0
+          python-multipart>=0.0.9
+          aiosqlite>=0.20.0
+          REQS
 
       - name: Run pip-audit
-        run: |
-          source .venv/bin/activate
-          pip install pip-audit
-          pip-audit --strict -r /tmp/requirements-audit.txt
+        run: pip-audit --strict -r /tmp/requirements-audit.txt
