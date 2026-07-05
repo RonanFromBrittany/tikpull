@@ -8,8 +8,9 @@ from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.table import Table
 
-from .downloader import download_batch, download_video
-from .models import DownloadRequest
+from .config import load_config, get_output_dir
+from .downloader import download_video
+from .models import DownloadRequest, DownloadResult
 
 console = Console()
 
@@ -21,8 +22,8 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument("urls", nargs="*", help="One or more TikTok video URLs")
     parser.add_argument(
-        "-o", "--output", default=".", metavar="DIR",
-        help="Output directory (default: current directory)",
+        "-o", "--output", default=None, metavar="DIR",
+        help="Output directory (overrides config file)",
     )
     parser.add_argument(
         "-f", "--file", metavar="FILE",
@@ -32,36 +33,83 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
-def _collect_urls(args: argparse.Namespace) -> list[str]:
+def _read_url_file(path: Path) -> tuple[list[str], list[str]]:
+    """Read a URL file and return (active_urls, original_lines).
+
+    Lines starting with '#' or empty lines are ignored.
+    original_lines preserves the full file content for rewriting.
+    """
+    lines = path.read_text().splitlines()
+    active_urls = [
+        line.strip()
+        for line in lines
+        if line.strip() and not line.strip().startswith("#")
+    ]
+    return active_urls, lines
+
+
+def _comment_url_in_file(path: Path, url: str, original_lines: list[str]) -> None:
+    """Comment out the line matching url in the file.
+
+    Rewrites the file in place, preserving all other lines unchanged.
+    """
+    new_lines = []
+    for line in original_lines:
+        if line.strip() == url:
+            new_lines.append(f"# {line}")
+        else:
+            new_lines.append(line)
+    path.write_text("\n".join(new_lines) + "\n")
+
+
+def _collect_urls(args: argparse.Namespace) -> tuple[list[str], Path | None, list[str]]:
+    """Collect URLs from CLI args and/or file.
+
+    Returns (urls, url_file_path, original_lines).
+    url_file_path and original_lines are None/[] if no file was provided.
+    """
     urls = list(args.urls)
+    url_file: Path | None = None
+    original_lines: list[str] = []
+
     if args.file:
-        path = Path(args.file)
-        if not path.is_file():
+        url_file = Path(args.file)
+        if not url_file.is_file():
             console.print(f"[red]Error:[/red] file not found: {args.file}")
             sys.exit(1)
-        lines = path.read_text().splitlines()
-        urls.extend(line.strip() for line in lines if line.strip())
-    return urls
+        file_urls, original_lines = _read_url_file(url_file)
+        urls.extend(file_urls)
+
+    return urls, url_file, original_lines
 
 
 def main(argv: list[str] | None = None) -> None:
     args = _parse_args(argv)
-    urls = _collect_urls(args)
+    urls, url_file, original_lines = _collect_urls(args)
 
     if not urls:
         console.print("[yellow]No URLs provided. Use --help for usage.[/yellow]")
         sys.exit(0)
 
-    output_dir = Path(args.output)
-    requests = [DownloadRequest(url=url, output_dir=output_dir) for url in urls]
+    config = load_config()
+    output_dir = get_output_dir(config, cli_override=args.output)
+    console.print(f"[dim]Output directory: {output_dir}[/dim]")
 
-    results = []
+    results: list[DownloadResult] = []
+
     with Progress(SpinnerColumn(), TextColumn("{task.description}"), console=console) as progress:
-        for req in requests:
-            task = progress.add_task(f"Downloading {req.url[:60]}…", total=None)
-            result = download_video(req)
+        for url in urls:
+            task = progress.add_task(f"Downloading {url[:60]}…", total=None)
+            request = DownloadRequest(url=url, output_dir=output_dir)
+            result = download_video(request)
             results.append(result)
             progress.remove_task(task)
+
+            # Comment out the URL in the file immediately after a successful download
+            if result.success and url_file is not None:
+                _comment_url_in_file(url_file, url, original_lines)
+                # Keep original_lines in sync with the rewritten file
+                original_lines = url_file.read_text().splitlines()
 
     # Summary table
     table = Table(title="Download results", show_lines=True)
