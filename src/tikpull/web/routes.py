@@ -166,3 +166,38 @@ async def download_batch_file(file: UploadFile = File(...)):
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
+
+
+# --- Config routes ---
+
+class ConfigPayload(BaseModel):
+    output_dir: str = ""
+    url_file: str = ""
+
+
+@router.get("/config")
+async def get_config():
+    """Return the current tikpull configuration."""
+    config = load_config()
+    return {
+        "output_dir": config.get("output_dir", ""),
+        "url_file": config.get("url_file", ""),
+    }
+
+
+@router.post("/config")
+async def save_config(payload: ConfigPayload):
+    """Write updated configuration to ~/.config/tikpull/config.toml."""
+    from tikpull.config import DEFAULT_CONFIG_PATH
+
+    config_path = DEFAULT_CONFIG_PATH
+    config_path.parent.mkdir(parents=True, exist_ok=True)
+
+    lines = []
+    if payload.output_dir:
+        lines.append(f'output_dir = "{payload.output_dir}"')
+    if payload.url_file:
+        lines.append(f'url_file = "{payload.url_file}"')
+
+    config_path.write_text("\n".join(lines) + "\n")
+    return {"status": "saved"}

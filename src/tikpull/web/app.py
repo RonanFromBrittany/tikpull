@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI
+from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from .database import init_db
@@ -28,7 +29,13 @@ def create_app() -> FastAPI:
         docs_url="/api/docs",
         redoc_url=None,
     )
+
     app.include_router(router, prefix="/api")
+
+    @app.get("/admin")
+    async def admin_page():
+        return FileResponse(STATIC_DIR / "admin.html")
+
     app.mount("/", StaticFiles(directory=STATIC_DIR, html=True), name="static")
     return app
 

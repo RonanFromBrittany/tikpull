@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>tikpull — Admin</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f0f0f;
+      --surface: #1a1a1a;
+      --border: #2a2a2a;
+      --accent: #fe2c55;
+      --accent-hover: #e0193f;
+      --text: #f1f1f1;
+      --text-muted: #888;
+      --success: #25c96e;
+      --error: #fe2c55;
+      --radius: 10px;
+      --font: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem 1rem;
+    }
+
+    header { text-align: center; margin-bottom: 2.5rem; }
+    header h1 { font-size: 2.2rem; font-weight: 800; letter-spacing: -0.5px; }
+    header h1 span { color: var(--accent); }
+    header p { color: var(--text-muted); margin-top: 0.4rem; font-size: 0.95rem; }
+
+    .back-link {
+      display: inline-block;
+      margin-top: 0.6rem;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      text-decoration: none;
+    }
+    .back-link:hover { color: var(--text); }
+
+    main {
+      width: 100%;
+      max-width: 580px;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+    }
+
+    .card h2 {
+      font-size: 0.8rem;
+      font-weight: 600;
+      margin-bottom: 1.2rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      margin-bottom: 1rem;
+    }
+
+    .field label {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .field input[type="text"] {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-size: 0.95rem;
+      padding: 0.6rem 0.9rem;
+      outline: none;
+      transition: border-color 0.15s;
+      width: 100%;
+      font-family: monospace;
+    }
+
+    .field input[type="text"]:focus { border-color: var(--accent); }
+
+    .field .hint {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+
+    .actions {
+      display: flex;
+      gap: 0.6rem;
+      margin-top: 0.5rem;
+    }
+
+    button {
+      background: var(--accent);
+      border: none;
+      border-radius: 6px;
+      color: #fff;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 600;
+      padding: 0.6rem 1.4rem;
+      transition: background 0.15s;
+    }
+
+    button:hover { background: var(--accent-hover); }
+
+    .toast {
+      display: none;
+      margin-top: 1rem;
+      padding: 0.6rem 1rem;
+      border-radius: 6px;
+      font-size: 0.88rem;
+    }
+
+    .toast.success { background: rgba(37,201,110,0.15); color: var(--success); }
+    .toast.error   { background: rgba(254,44,85,0.15);  color: var(--error); }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>tik<span>pull</span></h1>
+  <p>Administration</p>
+  <a class="back-link" href="/">← Back to downloads</a>
+</header>
+
+<main>
+
+  <div class="card">
+    <h2>Settings</h2>
+
+    <div class="field">
+      <label for="output-dir">Output directory</label>
+      <input type="text" id="output-dir" placeholder="~/Downloads/tikpull" />
+      <span class="hint">Directory where downloaded files are saved.</span>
+    </div>
+
+    <div class="field">
+      <label for="url-file">Default URL file</label>
+      <input type="text" id="url-file" placeholder="~/Documents/tiktok_urls.txt" />
+      <span class="hint">Text file with one TikTok URL per line. Commented lines (#) are treated as already downloaded.</span>
+    </div>
+
+    <div class="actions">
+      <button onclick="saveConfig()">Save</button>
+    </div>
+
+    <div class="toast" id="toast"></div>
+  </div>
+
+</main>
+
+<script>
+  // Load current config values on page load
+  async function loadConfig() {
+    const resp = await fetch('/api/config');
+    if (!resp.ok) return;
+    const config = await resp.json();
+    document.getElementById('output-dir').value = config.output_dir || '';
+    document.getElementById('url-file').value = config.url_file || '';
+  }
+
+  // Save updated config values
+  async function saveConfig() {
+    const payload = {
+      output_dir: document.getElementById('output-dir').value.trim(),
+      url_file: document.getElementById('url-file').value.trim(),
+    };
+
+    const resp = await fetch('/api/config', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+
+    const toast = document.getElementById('toast');
+    if (resp.ok) {
+      toast.textContent = 'Settings saved.';
+      toast.className = 'toast success';
+    } else {
+      const err = await resp.json();
+      toast.textContent = `Error: ${err.detail || 'Unknown error'}`;
+      toast.className = 'toast error';
+    }
+    toast.style.display = 'block';
+    setTimeout(() => { toast.style.display = 'none'; }, 3000);
+  }
+
+  loadConfig();
+</script>
+
+</body>
+</html>
