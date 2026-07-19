@@ -1,4 +1,5 @@
 from pathlib import Path
+from urllib.parse import urlparse
 
 import httpx
 import yt_dlp
@@ -23,12 +24,26 @@ def _build_ydl_opts(request: DownloadRequest) -> dict:
         "no_warnings": True,
         "format": "bestvideo+bestaudio/best",
         "merge_output_format": "mp4",
+        # A single pasted URL should download a single video, even if it
+        # happens to carry a playlist/reel-sequence parameter (YouTube).
+        "noplaylist": True,
     }
 
 
+def _is_tiktok_url(url: str) -> bool:
+    """Return True if the URL's host is tiktok.com (or a subdomain)."""
+    host = urlparse(url).netloc.lower()
+    return host == "tiktok.com" or host.endswith(".tiktok.com")
+
+
 def _is_photo_url(url: str) -> bool:
-    """Return True if the URL points to a TikTok photo/carousel post."""
-    return "/photo/" in url
+    """Return True if the URL points to a TikTok photo/carousel post.
+
+    This is a TikTok-specific format (yt-dlp can't extract these), so the
+    check is scoped to tiktok.com to avoid misfiring on e.g. an Instagram
+    URL that happens to contain "/photo/".
+    """
+    return _is_tiktok_url(url) and "/photo/" in url
 
 
 def _post_id(url: str) -> str:
@@ -98,17 +113,19 @@ def _download_with_tikwm(request: DownloadRequest) -> DownloadResult:
 
 
 def download_video(request: DownloadRequest) -> DownloadResult:
-    """Download a single TikTok video or photo post.
+    """Download a single video or photo post.
 
-    Strategy:
-    - Photo/carousel URLs (/photo/) → tikwm API directly
-    - Video URLs → yt-dlp first, tikwm as fallback on failure
+    Supports TikTok, YouTube, Instagram, and anything else yt-dlp can
+    extract. Strategy:
+    - TikTok photo/carousel URLs (/photo/) → tikwm API directly
+    - TikTok video URLs → yt-dlp first, tikwm API as fallback on failure
+    - Everything else (YouTube, Instagram, ...) → yt-dlp only
     """
     if _is_photo_url(request.url):
         return _download_with_tikwm(request)
 
     result = _download_with_ytdlp(request)
-    if not result.success:
+    if not result.success and _is_tiktok_url(request.url):
         result = _download_with_tikwm(request)
     return result
 

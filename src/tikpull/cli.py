@@ -18,9 +18,11 @@ console = Console()
 def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         prog="tikpull",
-        description="Download TikTok videos from the command line.",
+        description="Download TikTok, YouTube, and Instagram videos from the command line.",
     )
-    parser.add_argument("urls", nargs="*", help="One or more TikTok video URLs")
+    parser.add_argument(
+        "urls", nargs="*", help="One or more video URLs (TikTok, YouTube, Instagram, ...)"
+    )
     parser.add_argument(
         "-o",
         "--output",

@@ -2,18 +2,25 @@
 
 [![Security Scan](https://github.com/RonanFromBrittany/tikpull/actions/workflows/security.yml/badge.svg)](https://github.com/RonanFromBrittany/tikpull/actions/workflows/security.yml)
 
-Download TikTok videos and photo carousels from the command line, as a Python library, or via a web interface.
+Download TikTok, YouTube, and Instagram videos (and TikTok photo carousels)
+from the command line, as a Python library, or via a web/desktop interface.
 
 ## Features
 
-- Download TikTok videos (MP4, no watermark)
-- Download TikTok photo/carousel posts (JPEG, no watermark)
-- Batch download from a URL list file
+- Download TikTok videos (MP4, no watermark) and photo/carousel posts (JPEG, no watermark)
+- Download YouTube videos
+- Download Instagram videos (reels, posts — public content)
+- Batch download from a URL list file, mixing platforms freely
 - Automatically comments out successfully downloaded URLs in the list file (for easy resuming)
 - Configurable output directory and default URL file via config file or CLI flag
 - Web interface with real-time progress, batch upload, and persistent download history
 - Native desktop app (macOS / Windows installers) — no terminal required
 - Security scanning via CodeQL and pip-audit on every push
+
+> Downloading content is subject to each platform's Terms of Service and the
+> rights of the content owner. This tool is intended for personal use with
+> content you have the right to download (e.g. your own videos, or others
+> shared with permission).
 
 ## Installation
 
@@ -34,16 +41,22 @@ below) with no Python install required.
 ## CLI usage
 
 ```bash
-# Single video
+# TikTok video
 tikpull "https://www.tiktok.com/@user/video/123456"
 
-# Single photo/carousel post
+# TikTok photo/carousel post
 tikpull "https://www.tiktok.com/@user/photo/123456"
+
+# YouTube video
+tikpull "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+
+# Instagram reel / post
+tikpull "https://www.instagram.com/reel/Cabc123XYZ/"
 
 # Custom output directory
 tikpull -o ~/Downloads "https://www.tiktok.com/@user/video/123456"
 
-# Batch download from a file (one URL per line)
+# Batch download from a file (one URL per line, platforms can be mixed)
 tikpull -f urls.txt
 
 # Combine: batch + custom output directory
@@ -56,6 +69,8 @@ tikpull -f urls.txt -o ~/Downloads/tiktok
 https://www.tiktok.com/@user1/video/111
 # https://www.tiktok.com/@user2/video/222   ← already downloaded, skipped
 https://www.tiktok.com/@user3/photo/333
+https://www.youtube.com/watch?v=dQw4w9WgXcQ
+https://www.instagram.com/reel/Cabc123XYZ/
 ```
 
 Lines starting with `#` are ignored. After each successful download, the
@@ -174,10 +189,17 @@ results = download_batch(requests)
 
 ## How it works
 
-| URL type   | Backend                          |
-|------------|----------------------------------|
-| `/video/`  | yt-dlp (fallback: tikwm API)     |
-| `/photo/`  | tikwm API (JPEG images)          |
+| Platform                | Backend                      |
+|--------------------------|------------------------------|
+| TikTok video (`/video/`) | yt-dlp (fallback: tikwm API) |
+| TikTok photo (`/photo/`) | tikwm API (JPEG images)      |
+| YouTube                  | yt-dlp                       |
+| Instagram                | yt-dlp                       |
+
+Anything else yt-dlp supports may also work, but only TikTok, YouTube, and
+Instagram are actively tested. Instagram content behind a private account,
+or some post types, may require you to be logged in — not currently
+supported.
 
 ## Development
 

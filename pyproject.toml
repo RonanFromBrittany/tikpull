@@ -1,7 +1,7 @@
 [project]
 name = "tikpull"
 version = "0.1.0"
-description = "Download TikTok videos and photo carousels from the command line or as a Python library"
+description = "Download TikTok, YouTube, and Instagram videos from the command line or as a Python library"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
