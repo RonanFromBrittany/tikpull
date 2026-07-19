@@ -72,6 +72,29 @@ def _download_with_ytdlp(request: DownloadRequest) -> DownloadResult:
         with yt_dlp.YoutubeDL(opts) as ydl:
             info = ydl.extract_info(request.url, download=True)
             filename = ydl.prepare_filename(info)
+
+            if info.get("vcodec") == "none":
+                # The format selector ("bestvideo+bestaudio/best") fell back
+                # to an audio-only format because no video format was
+                # extracted at all. This happens when a platform (mainly
+                # Instagram) refuses to serve full video data to an
+                # anonymous/rate-limited request — yt-dlp doesn't treat it
+                # as an error, so without this check we'd silently hand
+                # back an audio-only file labelled as a successful video
+                # download. Clean up that file and fail loudly instead.
+                for candidate in {Path(filename), Path(filename).with_suffix(".mp4")}:
+                    candidate.unlink(missing_ok=True)
+                return DownloadResult(
+                    url=request.url,
+                    success=False,
+                    error=(
+                        "Only audio was available for this URL (no video stream "
+                        "found). This usually means the site is refusing "
+                        "anonymous requests for this content. Set a cookies "
+                        "file from a logged-in session in Settings and retry."
+                    ),
+                )
+
             output_path = Path(filename).with_suffix(".mp4")
             return DownloadResult(url=request.url, success=True, output_path=output_path)
     except yt_dlp.utils.DownloadError as exc:
