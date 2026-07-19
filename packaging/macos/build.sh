@@ -31,6 +31,7 @@ pyinstaller \
   --add-data "src/tikpull/web/static:tikpull/web/static" \
   --collect-all uvicorn \
   --collect-all fastapi \
+  --collect-all imageio_ffmpeg \
   --noconfirm \
   src/tikpull/desktop.py
 

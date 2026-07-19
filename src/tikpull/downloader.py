@@ -2,6 +2,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 import httpx
+import imageio_ffmpeg
 import yt_dlp
 
 from .models import DownloadRequest, DownloadResult
@@ -27,6 +28,10 @@ def _build_ydl_opts(request: DownloadRequest) -> dict:
         # A single pasted URL should download a single video, even if it
         # happens to carry a playlist/reel-sequence parameter (YouTube).
         "noplaylist": True,
+        # Merging separate video/audio streams requires ffmpeg. Point
+        # yt-dlp at the static binary bundled via imageio-ffmpeg instead
+        # of relying on one being installed on the system PATH.
+        "ffmpeg_location": imageio_ffmpeg.get_ffmpeg_exe(),
     }
 
 
