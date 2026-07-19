@@ -8,6 +8,7 @@ except ImportError:
     import tomli as tomllib  # fallback for older Python
 
 DEFAULT_CONFIG_PATH = Path.home() / ".config" / "tikpull" / "config.toml"
+DEFAULT_OUTPUT_DIR = Path.home() / "Downloads" / "tikpull"
 
 
 def load_config(config_path: Path = DEFAULT_CONFIG_PATH) -> dict:
@@ -25,13 +26,17 @@ def get_output_dir(config: dict, cli_override: str | None = None) -> Path:
     """Resolve the output directory with the following priority:
     1. CLI argument (-o / --output)
     2. config.toml output_dir
-    3. Current directory (fallback)
+    3. ~/Downloads/tikpull (fallback)
+
+    The fallback used to be the current working directory, but that's
+    unpredictable for a GUI app (desktop launch) where the cwd isn't under
+    the user's control, so a fixed, discoverable default is used instead.
     """
     if cli_override is not None:
         return Path(cli_override).expanduser().resolve()
     if "output_dir" in config:
         return Path(config["output_dir"]).expanduser().resolve()
-    return Path(".").resolve()
+    return DEFAULT_OUTPUT_DIR
 
 
 def get_url_file(config: dict) -> Path | None:

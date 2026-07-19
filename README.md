@@ -12,6 +12,7 @@ Download TikTok videos and photo carousels from the command line, as a Python li
 - Automatically comments out successfully downloaded URLs in the list file (for easy resuming)
 - Configurable output directory and default URL file via config file or CLI flag
 - Web interface with real-time progress, batch upload, and persistent download history
+- Native desktop app (macOS / Windows installers) — no terminal required
 - Security scanning via CodeQL and pip-audit on every push
 
 ## Installation
@@ -19,6 +20,16 @@ Download TikTok videos and photo carousels from the command line, as a Python li
 ```bash
 uv pip install tikpull
 ```
+
+### Desktop installers (macOS / Windows)
+
+Prebuilt installers are published on the [Releases page](https://github.com/RonanFromBrittany/tikpull/releases):
+
+- **macOS**: `tikpull.dmg` — open it, drag tikpull into Applications.
+- **Windows**: `tikpull-setup.exe` — run it, follow the installer.
+
+These give you a native tikpull window (see [Desktop app](#desktop-app)
+below) with no Python install required.
 
 ## CLI usage
 
@@ -75,10 +86,15 @@ pip install "tikpull[desktop]"
 tikpull-desktop
 ```
 
-### macOS app bundle
+### Building the installers yourself
 
-To build a double-clickable `tikpull.app` (for the Dock / Applications
-folder), run this on a Mac:
+You don't need to do this to just use tikpull — see
+[Desktop installers](#desktop-installers-macos--windows) above for prebuilt
+downloads. These steps are only for building them yourself.
+
+#### macOS
+
+Run this on a Mac:
 
 ```bash
 python3 -m venv .venv
@@ -87,10 +103,39 @@ pip install -e ".[desktop]" pyinstaller
 bash packaging/macos/build.sh
 ```
 
-This produces `dist/tikpull.app`. Drag it to `/Applications`. Since the app
-isn't code-signed, the first launch will be blocked by Gatekeeper —
-right-click the app and choose **Open** (or allow it via System Settings ->
-Privacy & Security) the first time only.
+Produces `dist/tikpull.app` and `dist/tikpull.dmg`. Since the app isn't
+code-signed, the first launch will be blocked by Gatekeeper — right-click
+the app and choose **Open** (or allow it via System Settings -> Privacy &
+Security) the first time only.
+
+#### Windows
+
+Run this on Windows, with [Inno Setup](https://jrsoftware.org/isinfo.php)
+installed:
+
+```powershell
+python -m venv .venv
+.venv\Scripts\activate
+pip install -e ".[desktop]" pyinstaller
+powershell -ExecutionPolicy Bypass -File packaging\windows\build.ps1
+iscc packaging\windows\installer.iss
+```
+
+Produces `dist_installer\tikpull-setup.exe`.
+
+#### Automated builds (GitHub Actions)
+
+Pushing a version tag builds both installers and publishes them as a
+GitHub Release automatically:
+
+```bash
+git tag v0.2.0
+git push --tags
+```
+
+You can also trigger a build without publishing a release from the
+**Actions** tab -> **Release** -> **Run workflow** (the installers are then
+attached to that workflow run instead).
 
 ## Configuration
 
@@ -104,7 +149,7 @@ url_file   = "~/Documents/tiktok_urls.txt"
 Priority order for the output directory:
 1. `-o` / `--output` CLI flag
 2. `output_dir` in `~/.config/tikpull/config.toml`
-3. Current directory (fallback)
+3. `~/Downloads/tikpull` (fallback)
 
 ## Python API
 

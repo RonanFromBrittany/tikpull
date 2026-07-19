@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Build tikpull.app for macOS with PyInstaller.
+# Build tikpull.app + tikpull.dmg for macOS with PyInstaller.
 #
 # Run this ON A MAC, from the project root, inside a venv that has the
 # desktop extras installed:
@@ -9,8 +9,8 @@
 #   pip install -e ".[desktop]" pyinstaller
 #   bash packaging/macos/build.sh
 #
-# The finished app will be at dist/tikpull.app.
-# Drag it into /Applications, then double-click to launch.
+# Produces dist/tikpull.app and dist/tikpull.dmg. Double-click the .dmg,
+# drag tikpull into Applications.
 #
 # Note: since the app isn't code-signed/notarized, the first launch will be
 # blocked by Gatekeeper ("cannot be opened because the developer cannot be
@@ -35,4 +35,22 @@ pyinstaller \
   src/tikpull/desktop.py
 
 echo
-echo "Done. Drag dist/tikpull.app to /Applications, then double-click to launch."
+echo "App built. Packaging into a .dmg..."
+
+DMG_STAGING=$(mktemp -d)
+trap 'rm -rf "$DMG_STAGING"' EXIT
+
+cp -R dist/tikpull.app "$DMG_STAGING/"
+ln -s /Applications "$DMG_STAGING/Applications"
+
+rm -f dist/tikpull.dmg
+hdiutil create \
+  -volname "tikpull" \
+  -srcfolder "$DMG_STAGING" \
+  -ov -format UDZO \
+  dist/tikpull.dmg
+
+echo
+echo "Done:"
+echo "  - dist/tikpull.app  (drag to /Applications yourself)"
+echo "  - dist/tikpull.dmg  (double-click, then drag tikpull into Applications)"
