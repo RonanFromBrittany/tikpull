@@ -36,7 +36,7 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         metavar="FILE",
         help="Text file containing one URL per line (batch mode)",
     )
-    parser.add_argument("--version", action="version", version="tikpull 0.3.0")
+    parser.add_argument("--version", action="version", version="tikpull 0.3.3")
     return parser.parse_args(argv)
 
 
