@@ -11,7 +11,7 @@ from fastapi import APIRouter, File, HTTPException, UploadFile
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
-from tikpull.config import get_output_dir, get_url_file, load_config
+from tikpull.config import get_cookies_file, get_output_dir, get_url_file, load_config
 from tikpull.downloader import download_video
 from tikpull.models import DownloadRequest
 
@@ -73,6 +73,7 @@ async def _stream_downloads(
     """Yield SSE events for each download, prepending already-downloaded entries."""
     config = load_config()
     output_dir = get_output_dir(config)
+    cookies_file = get_cookies_file(config)
 
     # Emit already-downloaded entries from the URL file (commented lines)
     for url in already_downloaded:
@@ -84,7 +85,7 @@ async def _stream_downloads(
     for idx, url in enumerate(urls, start=1):
         yield f"data: {json.dumps({'type': 'progress', 'idx': idx, 'url': url})}\n\n"
 
-        request = DownloadRequest(url=url, output_dir=output_dir)
+        request = DownloadRequest(url=url, output_dir=output_dir, cookies_file=cookies_file)
         result = await asyncio.get_event_loop().run_in_executor(None, download_video, request)
 
         if result.success:
@@ -202,6 +203,7 @@ async def download_batch_file(file: UploadFile = File(...)):
 class ConfigPayload(BaseModel):
     output_dir: str = ""
     url_file: str = ""
+    cookies_file: str = ""
 
 
 @router.get("/config")
@@ -211,6 +213,7 @@ async def get_config():
     return {
         "output_dir": config.get("output_dir", ""),
         "url_file": config.get("url_file", ""),
+        "cookies_file": config.get("cookies_file", ""),
     }
 
 
@@ -227,6 +230,8 @@ async def save_config(payload: ConfigPayload):
         lines.append(f'output_dir = "{payload.output_dir}"')
     if payload.url_file:
         lines.append(f'url_file = "{payload.url_file}"')
+    if payload.cookies_file:
+        lines.append(f'cookies_file = "{payload.cookies_file}"')
 
     config_path.write_text("\n".join(lines) + "\n")
     return {"status": "saved"}

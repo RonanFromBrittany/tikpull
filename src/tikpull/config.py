@@ -45,3 +45,17 @@ def get_url_file(config: dict) -> Path | None:
         path = Path(config["url_file"]).expanduser().resolve()
         return path if path.is_file() else None
     return None
+
+
+def get_cookies_file(config: dict) -> Path | None:
+    """Return the cookies.txt path from config, or None if not set/found.
+
+    Instagram (and occasionally YouTube) will refuse anonymous requests for
+    some content — yt-dlp raises "sent an empty media response" in that
+    case. Pointing yt-dlp at a browser-exported cookies.txt (Netscape
+    format, from a logged-in session) fixes this.
+    """
+    if "cookies_file" in config:
+        path = Path(config["cookies_file"]).expanduser().resolve()
+        return path if path.is_file() else None
+    return None

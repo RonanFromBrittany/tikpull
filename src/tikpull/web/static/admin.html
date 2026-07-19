@@ -159,6 +159,12 @@
       <span class="hint">Text file with one video URL per line (TikTok, YouTube, Instagram, ...). Commented lines (#) are treated as already downloaded.</span>
     </div>
 
+    <div class="field">
+      <label for="cookies-file">Cookies file (optional)</label>
+      <input type="text" id="cookies-file" placeholder="~/Documents/instagram_cookies.txt" />
+      <span class="hint">Netscape-format cookies.txt from a logged-in browser session. Fixes "Instagram sent an empty media response" errors on reels that require login. Export with a browser extension like "Get cookies.txt LOCALLY".</span>
+    </div>
+
     <div class="actions">
       <button onclick="saveConfig()">Save</button>
     </div>
@@ -176,6 +182,7 @@
     const config = await resp.json();
     document.getElementById('output-dir').value = config.output_dir || '';
     document.getElementById('url-file').value = config.url_file || '';
+    document.getElementById('cookies-file').value = config.cookies_file || '';
   }
 
   // Save updated config values
@@ -183,6 +190,7 @@
     const payload = {
       output_dir: document.getElementById('output-dir').value.trim(),
       url_file: document.getElementById('url-file').value.trim(),
+      cookies_file: document.getElementById('cookies-file').value.trim(),
     };
 
     const resp = await fetch('/api/config', {

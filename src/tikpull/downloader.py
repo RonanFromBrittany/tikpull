@@ -19,7 +19,7 @@ def _build_ydl_opts(request: DownloadRequest) -> dict:
     else:
         outtmpl = str(output_dir / "%(uploader)s_%(id)s.%(ext)s")
 
-    return {
+    opts = {
         "outtmpl": outtmpl,
         "quiet": True,
         "no_warnings": True,
@@ -33,6 +33,15 @@ def _build_ydl_opts(request: DownloadRequest) -> dict:
         # of relying on one being installed on the system PATH.
         "ffmpeg_location": imageio_ffmpeg.get_ffmpeg_exe(),
     }
+
+    if request.cookies_file is not None:
+        # Instagram (and sometimes YouTube) refuses anonymous requests for
+        # some posts/reels, which surfaces as yt-dlp raising "sent an empty
+        # media response". A cookies.txt from a logged-in browser session
+        # fixes this.
+        opts["cookiefile"] = str(request.cookies_file)
+
+    return opts
 
 
 def _is_tiktok_url(url: str) -> bool:

@@ -8,7 +8,7 @@ from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.table import Table
 
-from .config import get_output_dir, load_config
+from .config import get_cookies_file, get_output_dir, load_config
 from .downloader import download_video
 from .models import DownloadRequest, DownloadResult
 
@@ -98,6 +98,7 @@ def main(argv: list[str] | None = None) -> None:
 
     config = load_config()
     output_dir = get_output_dir(config, cli_override=args.output)
+    cookies_file = get_cookies_file(config)
     console.print(f"[dim]Output directory: {output_dir}[/dim]")
 
     results: list[DownloadResult] = []
@@ -105,7 +106,7 @@ def main(argv: list[str] | None = None) -> None:
     with Progress(SpinnerColumn(), TextColumn("{task.description}"), console=console) as progress:
         for url in urls:
             task = progress.add_task(f"Downloading {url[:60]}…", total=None)
-            request = DownloadRequest(url=url, output_dir=output_dir)
+            request = DownloadRequest(url=url, output_dir=output_dir, cookies_file=cookies_file)
             result = download_video(request)
             results.append(result)
             progress.remove_task(task)

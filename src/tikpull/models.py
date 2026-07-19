@@ -9,6 +9,7 @@ class DownloadRequest:
     url: str
     output_dir: Path = field(default_factory=lambda: Path("."))
     filename: str | None = None  # None = auto-generated from metadata
+    cookies_file: Path | None = None  # Netscape cookies.txt for gated content
 
 
 @dataclass
