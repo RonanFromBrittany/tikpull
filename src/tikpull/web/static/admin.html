@@ -102,6 +102,21 @@
       color: var(--text-muted);
     }
 
+    .field-row {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .field-row input[type="text"] { flex: 1; }
+
+    .btn-secondary {
+      background: var(--border);
+      color: var(--text);
+      flex-shrink: 0;
+    }
+
+    .btn-secondary:hover { background: #333; }
+
     .actions {
       display: flex;
       gap: 0.6rem;
@@ -149,19 +164,28 @@
 
     <div class="field">
       <label for="output-dir">Output directory</label>
-      <input type="text" id="output-dir" placeholder="~/Downloads/tikpull" />
+      <div class="field-row">
+        <input type="text" id="output-dir" placeholder="~/Downloads/tikpull" />
+        <button type="button" class="btn-secondary" onclick="browseFolder('output-dir')">Browse…</button>
+      </div>
       <span class="hint">Directory where downloaded files are saved.</span>
     </div>
 
     <div class="field">
       <label for="url-file">Default URL file</label>
-      <input type="text" id="url-file" placeholder="~/Documents/video_urls.txt" />
+      <div class="field-row">
+        <input type="text" id="url-file" placeholder="~/Documents/video_urls.txt" />
+        <button type="button" class="btn-secondary" onclick="browseFile('url-file')">Browse…</button>
+      </div>
       <span class="hint">Text file with one video URL per line (TikTok, YouTube, Instagram, ...). Commented lines (#) are treated as already downloaded.</span>
     </div>
 
     <div class="field">
       <label for="cookies-file">Cookies file (optional)</label>
-      <input type="text" id="cookies-file" placeholder="~/Documents/instagram_cookies.txt" />
+      <div class="field-row">
+        <input type="text" id="cookies-file" placeholder="~/Documents/instagram_cookies.txt" />
+        <button type="button" class="btn-secondary" onclick="browseFile('cookies-file')">Browse…</button>
+      </div>
       <span class="hint">Netscape-format cookies.txt from a logged-in browser session. Fixes "Instagram sent an empty media response" errors on reels that require login. Export with a browser extension like "Get cookies.txt LOCALLY".</span>
     </div>
 
@@ -210,6 +234,34 @@
     }
     toast.style.display = 'block';
     setTimeout(() => { toast.style.display = 'none'; }, 3000);
+  }
+
+  // Native folder/file pickers. Only available inside the pywebview
+  // desktop app (tikpull-desktop) — a page loaded in a plain browser
+  // (tikpull-web) can't be given real filesystem paths, so users there
+  // still type the path manually.
+  function pywebviewAvailable() {
+    return typeof window.pywebview !== 'undefined' && !!window.pywebview.api;
+  }
+
+  function showBrowserOnlyWarning() {
+    const toast = document.getElementById('toast');
+    toast.textContent = 'File browsing is only available in the tikpull desktop app. Type the path directly here instead.';
+    toast.className = 'toast error';
+    toast.style.display = 'block';
+    setTimeout(() => { toast.style.display = 'none'; }, 4000);
+  }
+
+  async function browseFolder(inputId) {
+    if (!pywebviewAvailable()) return showBrowserOnlyWarning();
+    const path = await window.pywebview.api.choose_folder();
+    if (path) document.getElementById(inputId).value = path;
+  }
+
+  async function browseFile(inputId) {
+    if (!pywebviewAvailable()) return showBrowserOnlyWarning();
+    const path = await window.pywebview.api.choose_file();
+    if (path) document.getElementById(inputId).value = path;
   }
 
   loadConfig();

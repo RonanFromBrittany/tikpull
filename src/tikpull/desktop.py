@@ -64,6 +64,22 @@ def main() -> None:
             'Install it with: pip install "tikpull[desktop]"'
         ) from exc
 
+    class Api:
+        """Methods exposed to the frontend as window.pywebview.api.<name>().
+
+        Lets the Settings page offer native folder/file pickers instead of
+        requiring the user to type an exact path — a web page can't expose
+        real filesystem paths, but the pywebview desktop window can.
+        """
+
+        def choose_folder(self) -> str | None:
+            result = webview.windows[0].create_file_dialog(webview.FOLDER_DIALOG)
+            return result[0] if result else None
+
+        def choose_file(self) -> str | None:
+            result = webview.windows[0].create_file_dialog(webview.OPEN_DIALOG)
+            return result[0] if result else None
+
     port = find_free_port()
     server_thread = threading.Thread(target=run_server, args=(port,), daemon=True)
     server_thread.start()
@@ -75,6 +91,7 @@ def main() -> None:
         width=WINDOW_WIDTH,
         height=WINDOW_HEIGHT,
         min_size=MIN_WINDOW_SIZE,
+        js_api=Api(),
     )
     webview.start()
 
