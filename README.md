@@ -63,6 +63,34 @@ Opens a local web server at `http://127.0.0.1:8080` with:
 - Batch download via drag-and-drop URL file upload
 - Persistent download history (SQLite, survives restarts)
 - Settings page to configure output directory and default URL file
+- A button to open the downloads folder directly from the interface
+
+## Desktop app
+
+tikpull can also run in a native window instead of a browser tab, using
+[pywebview](https://pywebview.flowrl.com/).
+
+```bash
+pip install "tikpull[desktop]"
+tikpull-desktop
+```
+
+### macOS app bundle
+
+To build a double-clickable `tikpull.app` (for the Dock / Applications
+folder), run this on a Mac:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -e ".[desktop]" pyinstaller
+bash packaging/macos/build.sh
+```
+
+This produces `dist/tikpull.app`. Drag it to `/Applications`. Since the app
+isn't code-signed, the first launch will be blocked by Gatekeeper —
+right-click the app and choose **Open** (or allow it via System Settings ->
+Privacy & Security) the first time only.
 
 ## Configuration
 

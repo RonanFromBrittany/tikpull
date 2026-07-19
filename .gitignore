@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+
+# Virtual environments
+.venv/
+venv/
+
+# Test / coverage
+.coverage
+.pytest_cache/
+htmlcov/
+
+# PyInstaller build output (packaging/macos/build.sh)
+build/
+dist/
+*.spec
+
+# Editors / OS
+.DS_Store
+.idea/
+.vscode/

@@ -131,9 +131,7 @@ async def open_folder():
     try:
         _open_in_file_manager(output_dir)
     except (OSError, subprocess.SubprocessError) as exc:
-        raise HTTPException(
-            status_code=500, detail=f"Could not open folder: {exc}"
-        ) from exc
+        raise HTTPException(status_code=500, detail=f"Could not open folder: {exc}") from exc
 
     return {"status": "opened", "path": str(output_dir)}
 

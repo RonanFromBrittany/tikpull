@@ -17,12 +17,16 @@ dependencies = [
 [project.scripts]
 tikpull = "tikpull.cli:main"
 tikpull-web = "tikpull.web.server:main"
+tikpull-desktop = "tikpull.desktop:main"
 
 [project.optional-dependencies]
 dev = [
     "pytest>=8.0.0",
     "pytest-cov>=5.0.0",
     "ruff>=0.4.0",
+]
+desktop = [
+    "pywebview>=5.0",
 ]
 
 [build-system]
