@@ -2,6 +2,8 @@
 
 import asyncio
 import json
+import subprocess
+import sys
 from collections.abc import AsyncGenerator
 from pathlib import Path
 
@@ -107,6 +109,33 @@ async def _stream_downloads(
         yield f"data: {json.dumps({'type': 'result', 'idx': idx, **entry})}\n\n"
 
     yield f"data: {json.dumps({'type': 'done'})}\n\n"
+
+
+def _open_in_file_manager(path: Path) -> None:
+    """Open a directory in the OS's native file manager."""
+    if sys.platform == "darwin":
+        subprocess.Popen(["open", str(path)])
+    elif sys.platform == "win32":
+        subprocess.Popen(["explorer", str(path)])
+    else:
+        subprocess.Popen(["xdg-open", str(path)])
+
+
+@router.post("/open-folder")
+async def open_folder():
+    """Open the configured output directory in the OS's file manager."""
+    config = load_config()
+    output_dir = get_output_dir(config)
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    try:
+        _open_in_file_manager(output_dir)
+    except (OSError, subprocess.SubprocessError) as exc:
+        raise HTTPException(
+            status_code=500, detail=f"Could not open folder: {exc}"
+        ) from exc
+
+    return {"status": "opened", "path": str(output_dir)}
 
 
 @router.get("/history")

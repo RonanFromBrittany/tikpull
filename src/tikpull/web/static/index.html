@@ -202,6 +202,8 @@
       margin-bottom: 1rem;
     }
 
+    .header-actions { display: flex; gap: 0.5rem; }
+
     .card-header h2 { margin-bottom: 0; }
 
     .clear-btn {
@@ -250,7 +252,10 @@
   <div class="card">
     <div class="card-header">
       <h2>History</h2>
-      <button class="clear-btn" onclick="clearHistory()">Clear</button>
+      <div class="header-actions">
+        <button class="clear-btn" onclick="openFolder()">📂 Open folder</button>
+        <button class="clear-btn" onclick="clearHistory()">Clear</button>
+      </div>
     </div>
     <div id="history-container"><p class="empty">No downloads yet.</p></div>
   </div>
@@ -441,6 +446,19 @@
         <tbody>${rows}</tbody>
       </table>
     `;
+  }
+
+  // Open the configured downloads folder in the OS file manager
+  async function openFolder() {
+    try {
+      const resp = await fetch('/api/open-folder', { method: 'POST' });
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({}));
+        alert(`Could not open folder: ${err.detail || 'unknown error'}`);
+      }
+    } catch (e) {
+      alert(`Could not open folder: ${e}`);
+    }
   }
 
   // Clear all history from the database
